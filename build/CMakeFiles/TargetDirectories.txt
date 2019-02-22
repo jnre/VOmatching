@@ -1,0 +1,8 @@
+/home/joseph/SOFT_FEATURES/build/CMakeFiles/edit_cache.dir
+/home/joseph/SOFT_FEATURES/build/CMakeFiles/rebuild_cache.dir
+/home/joseph/SOFT_FEATURES/build/CMakeFiles/feature.dir
+/home/joseph/SOFT_FEATURES/build/CMakeFiles/visualOdometry.dir
+/home/joseph/SOFT_FEATURES/build/CMakeFiles/MapPoint.dir
+/home/joseph/SOFT_FEATURES/build/CMakeFiles/bucket.dir
+/home/joseph/SOFT_FEATURES/build/CMakeFiles/run.dir
+/home/joseph/SOFT_FEATURES/build/CMakeFiles/utils.dir
