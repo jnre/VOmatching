@@ -122,7 +122,8 @@ void LRMatching(cv::Mat &img_l_0, cv::Mat &img_r_0,
   for(int i =0; i <current_features.size();i++){ //this is actually for keypoints_l_1
     current_features.ages[i] += 1;   
   }
-                   
+  FeatureSet temp_current_features;
+
   // cv::Size winSize=cv::Size(21,21);                                                                                             
   // cv::TermCriteria termcrit=cv::TermCriteria(cv::TermCriteria::COUNT+cv::TermCriteria::EPS, 30, 0.01);
   cv::Mat descriptors_l_0, descriptors_r_0;
@@ -138,63 +139,90 @@ void LRMatching(cv::Mat &img_l_0, cv::Mat &img_r_0,
   std::vector<cv::DMatch> inline_matches;
   std::vector<bool> boolll(keypoints_l_0.size());
   
-  for(int i =0; i< keypoints_l_0.size();i++){
-    boolll[i] = false;
+  // for(int i =0; i< keypoints_l_0.size();i++){
+  //   boolll[i] = false;
+  //   cv::Mat mask = cv::Mat::zeros(img_r_0.size(),CV_8U);
+  //   cv::Mat roi(mask,cv::Rect(0,keypoints_l_0[i].pt.y-1,keypoints_l_0[i].pt.x,2 ));// height of 1, on that line +1/-1, width is lesser than l_0.pt.x
+  //   roi = cv::Scalar(255);
+  //   orb_detector->detect(img_r_0,keypoints_r_0,mask);
+  //   orb_detector->compute(img_r_0,keypoints_r_0,descriptors_r_0); 
+
+  //   if(keypoints_r_0.size()>0){
+  //     std::vector<cv::DMatch> matches;
+  //     cv::Ptr<cv::BFMatcher> orb_matcher = cv::BFMatcher::create(cv::NORM_HAMMING,true);
+  //     orb_matcher->match(descriptors_l_0.row(i),descriptors_r_0,matches);
+
+  //     //if(matches[0].distance<30){
+  //     //keypoint in first frame stored in matched 0, passing distance thres
+  //       boolll[i] = true;
+  //       int new_i = static_cast<int>(matched_left_0.size());
+  //       matched_left_0.push_back(keypoints_l_0[i]);
+  //       //keypoint in current frame stored in matched 1, passing distance thres
+  //       matched_right_0.push_back(keypoints_r_0[matches[0].trainIdx]);
+  //       inline_matches.push_back(cv::DMatch(new_i,new_i,matches[0].distance));
+  //   }
+  // }
+    
+    
     cv::Mat mask = cv::Mat::zeros(img_r_0.size(),CV_8U);
-    cv::Mat roi(mask,cv::Rect(0,keypoints_l_0[i].pt.y-1,keypoints_l_0[i].pt.x,2 ));// height of 1, on that line +1/-1, width is lesser than l_0.pt.x
+    cv::Mat roi(mask,cv::Rect(validRoi));
     roi = cv::Scalar(255);
     orb_detector->detect(img_r_0,keypoints_r_0,mask);
     orb_detector->compute(img_r_0,keypoints_r_0,descriptors_r_0); 
+    std::vector<cv::DMatch> matches;
+    cv::Ptr<cv::BFMatcher> orb_matcher = cv::BFMatcher::create(cv::NORM_HAMMING,true);
+    orb_matcher->match(descriptors_l_0,descriptors_r_0,matches);
 
-    if(keypoints_r_0.size()>0){
-      std::vector<cv::DMatch> matches;
-      cv::Ptr<cv::BFMatcher> orb_matcher = cv::BFMatcher::create(cv::NORM_HAMMING,true);
-      orb_matcher->match(descriptors_l_0.row(i),descriptors_r_0,matches);
-
-      //if(matches[0].distance<30){
+    for(int i =0 ;i<matches.size();i++){
+      boolll[i] = false;  
+      if(matches[i].distance<50){
       //keypoint in first frame stored in matched 0, passing distance thres
         boolll[i] = true;
         int new_i = static_cast<int>(matched_left_0.size());
-        matched_left_0.push_back(keypoints_l_0[i]);
+        matched_left_0.push_back(keypoints_l_0[matches[i].queryIdx]);
         //keypoint in current frame stored in matched 1, passing distance thres
-        matched_right_0.push_back(keypoints_r_0[matches[0].trainIdx]);
-        inline_matches.push_back(cv::DMatch(new_i,new_i,matches[0].distance));
-    }
-  }
+        matched_right_0.push_back(keypoints_r_0[matches[i].trainIdx]);
+        inline_matches.push_back(cv::DMatch(new_i,new_i,matches[i].distance));
+        temp_current_features.keypoints.push_back(current_features.keypoints[matches[i].queryIdx]);
+        temp_current_features.ages.push_back(current_features.ages[matches[i].queryIdx]);
+        temp_current_features.descriptors.push_back(current_features.descriptors.row(matches[i].queryIdx));
+      }
+    }  
+
 
   
-  int counter = 0;
-  for(int i =0; i <keypoints_l_0.size();i++){
+  // int counter = 0;
+  // for(int i =0; i <keypoints_l_0.size();i++){
     
-    if(boolll[i] == false){
-      current_features.keypoints.erase(current_features.keypoints.begin() + counter);
-      current_features.ages.erase(current_features.ages.begin() + counter);  
-      cv::Mat top, bottom;
+  //   if(boolll[i] == false){
+  //     current_features.keypoints.erase(current_features.keypoints.begin() + counter);
+  //     current_features.ages.erase(current_features.ages.begin() + counter);  
+  //     cv::Mat top, bottom;
 
       
-      // current_features.descriptors(cv::Range(i+1,row_range),cv::Range(0,32)).copyTo(current_features.descriptors);
+  //     // current_features.descriptors(cv::Range(i+1,row_range),cv::Range(0,32)).copyTo(current_features.descriptors);
 
-        current_features.descriptors(cv::Range(0,counter),cv::Range(0,32)).copyTo(top);
-        if(top.empty()){
-          current_features.descriptors(cv::Range(counter+1,current_features.descriptors.rows),cv::Range(0,32)).copyTo(current_features.descriptors);
-          continue;
-        }
-        else if(counter+1<current_features.size()){
-          current_features.descriptors(cv::Range(counter+1,current_features.descriptors.rows),cv::Range(0,32)).copyTo(bottom);
-          vconcat(top,bottom,current_features.descriptors);
-          continue;
-        }
-        else{
-          current_features.descriptors = top;
-          break;
-        }
+  //       current_features.descriptors(cv::Range(0,counter),cv::Range(0,32)).copyTo(top);
+  //       if(top.empty()){
+  //         current_features.descriptors(cv::Range(counter+1,current_features.descriptors.rows),cv::Range(0,32)).copyTo(current_features.descriptors);
+  //         continue;
+  //       }
+  //       else if(counter+1<current_features.size()){
+  //         current_features.descriptors(cv::Range(counter+1,current_features.descriptors.rows),cv::Range(0,32)).copyTo(bottom);
+  //         vconcat(top,bottom,current_features.descriptors);
+  //         continue;
+  //       }
+  //       else{
+  //         current_features.descriptors = top;
+  //         break;
+  //       }
       
     
-    }
-    else{
-      counter++;
-    }   
-  }
+  //   }
+  //   else{
+  //     counter++;
+  //   }   
+  // }
 
   //ransac 
     std::vector<cv::DMatch> inline_matches_ransac;
@@ -230,30 +258,31 @@ void LRMatching(cv::Mat &img_l_0, cv::Mat &img_r_0,
   cv::Mat heha;
   cv::drawMatches(img_l_0,inline_left_0,img_r_0,inline_right_0,inline_matches_ransac,
   heha,cv::Scalar::all(-1),cv::Scalar::all(-1),std::vector<char>(),cv::DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS);
-  //cv::imshow("draw",heha);
-  //cv::waitKey(1);
+  cv::imshow("draw",heha);
+  cv::waitKey();
 
   
   int counter2 = 0;
   for(int i =0; i<matched_left_0.size();i++){
     
     if(!inline_mask.at<uchar>(i)){
-      current_features.keypoints.erase(current_features.keypoints.begin() + counter2);
-      current_features.ages.erase(current_features.ages.begin() + counter2);
+      temp_current_features.keypoints.erase(temp_current_features.keypoints.begin() + counter2);
+      temp_current_features.ages.erase(temp_current_features.ages.begin() + counter2);
+      
       cv::Mat top, bottom;
 
-      current_features.descriptors(cv::Range(0,counter2),cv::Range(0,32)).copyTo(top);
+      temp_current_features.descriptors(cv::Range(0,counter2),cv::Range(0,32)).copyTo(top);
       if(top.empty()){
-        current_features.descriptors(cv::Range(counter2+1,current_features.descriptors.rows),cv::Range(0,32)).copyTo(current_features.descriptors);
+        temp_current_features.descriptors(cv::Range(counter2+1,temp_current_features.descriptors.rows),cv::Range(0,32)).copyTo(temp_current_features.descriptors);
         continue;
       }
-      else if(counter2+1<current_features.size()){
-        current_features.descriptors(cv::Range(counter2+1,current_features.descriptors.rows),cv::Range(0,32)).copyTo(bottom);
-        vconcat(top,bottom,current_features.descriptors);
+      else if(counter2+1<temp_current_features.size()){
+        temp_current_features.descriptors(cv::Range(counter2+1,temp_current_features.descriptors.rows),cv::Range(0,32)).copyTo(bottom);
+        vconcat(top,bottom,temp_current_features.descriptors);
         continue;
       }
       else{
-        current_features.descriptors = top;
+        temp_current_features.descriptors = top;
         break;
       }
 
@@ -264,7 +293,9 @@ void LRMatching(cv::Mat &img_l_0, cv::Mat &img_r_0,
   }
   keypoints_r_0 = inline_right_0;
   keypoints_l_0 = inline_left_0;
-
+  current_features.keypoints = temp_current_features.keypoints;
+  current_features.ages = temp_current_features.ages;
+  current_features.descriptors = temp_current_features.descriptors;
 
   // cv::Mat res;
   // cv::drawMatches(img_l_0,matched_left_0,img_r_0,matched_right_0,inline_matches,res,cv::Scalar(255,0,0),cv::Scalar(255,0,0),std::vector<char>(),cv::DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS);
@@ -293,7 +324,7 @@ std::vector<cv::KeyPoint> & keypoints_l_1,std::vector<cv::KeyPoint> & keypoints_
   std::vector<cv::KeyPoint> temp_keypoints_r_0;
   descriptors_l_0 = current_features.descriptors;
 
-
+  keypoints_l_1.clear();
   std::vector<cv::KeyPoint> matched_left_0,matched_left_1;
   std::vector<cv::DMatch> matches;
   cv::Ptr<cv::BFMatcher> orb_matcher = cv::BFMatcher::create(cv::NORM_HAMMING,true);

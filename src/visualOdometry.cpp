@@ -35,7 +35,7 @@ void matchingFeatures(cv::Mat& imageLeft_t0, cv::Mat& imageRight_t0,
     cv::Mat checker;
     bucketingFeatures(imageLeft_t0, currentVOFeatures, bucket_size, features_per_bucket);   
     
-    LRMatching(imageLeft_t0, imageRight_t0,keypointsLeft_t0, keypointsRight_t0,currentVOFeatures, F,validRoi1,orb_detector);
+    LRMatching(imageLeft_t0, imageRight_t0,keypointsLeft_t0, keypointsRight_t0,currentVOFeatures, F,validRoi2,orb_detector);
 
     LeftMatching(imageLeft_t0,imageLeft_t1,keypointsLeft_t0,keypointsLeft_t1,keypointsRight_t0, validRoi1,currentVOFeatures,orb_detector,checker);
 
