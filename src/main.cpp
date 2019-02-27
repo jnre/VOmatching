@@ -28,31 +28,73 @@ using namespace std;
 //#include "Frame.h"
 #include "MapPoint.hpp"
 
+
 int main(int argc, char** argv)
 {
     if(argc <2)
     {
-        // /home/joseph/SOFT_zhenghao/myparam/   path: /home/joseph/SOFT_zhenghao/mypoints/
-        cerr<<" use ./run  path_to_calibration:/home/joseph/SOFT_zhenghao/kitti00.yaml [optional]path_to sequence: /home/joseph/dataset/sequences/00/"<<endl;
+        // /home/joseph/SOFT_FEATURES/myparam/   path: /home/joseph/SOFT_FEATURES/mypoints/
+        cerr<<" use ./run  path_to_calibration:/home/joseph/SOFT_FEATURES/kitti00.yaml [optional]path_to sequence: /home/joseph/dataset/sequences/00/ KITTI/LIVE /home/joseph/dataset/poses/00.txt"<<endl;
         return 1;
     }
     bool display_ground_truth = false; // from actual poses
     string strSettingPath;
     string filepath;
+    string mode;
+    string posepath;
+    std::vector<cv::Point3d> pose_estimator_data;
+    
+
     //just open the camera regardless
     cv::VideoCapture cap0(0);
     cv::VideoCapture cap1(1);
+    if(argc ==5){
+        display_ground_truth = true;
+        filepath = string(argv[2]);
+        cout <<"Filepath:"<<filepath <<endl;
+        strSettingPath = string(argv[1]);
+        cout << "Calibration Filepath: " <<strSettingPath <<endl;
+        posepath = string(argv[4]);
+        std::ifstream openseseme;
+        openseseme.open(posepath);
+        std::string line;
+        mode = string(argv[3]);
+        double var_file;
+        cv::Point3d var_xyz;
+        while(getline(openseseme,line)){
+            istringstream dat(line);
+            int counterish =0; 
+            while(dat>>var_file){
+                if(counterish ==3){
+                    var_xyz.x = var_file;
+                }
+                if(counterish ==7){
+                    var_xyz.y = var_file;
+                }
+                if(counterish ==11){
+                    var_xyz.z = var_file;
+                }
+                counterish++;
+            }
+            pose_estimator_data.push_back(var_xyz);
+        }
+        //std::cout<< pose_estimator_data<< std::endl;
+    }
+    if(argc==4){
+        filepath = string(argv[2]);
+        cout <<"Filepath:"<<filepath <<endl;
+        strSettingPath = string(argv[1]);
+        cout << "Calibration Filepath: " <<strSettingPath <<endl;
+        mode = string(argv[3]);
+    }
     if(argc ==3){
-    filepath = string(argv[2]);
-    cout <<"Filepath:"<<filepath <<endl;
     strSettingPath = string(argv[1]);
     cout << "Calibration Filepath: " <<strSettingPath <<endl;
+    mode = string(argv[2]);
     }
-    if(argc ==2){
-    strSettingPath = string(argv[1]);
-    cout << "Calibration Filepath: " <<strSettingPath <<endl;
+    
 
-    }
+
     cv::Mat proj_left_matrix;
     cv::Mat proj_right_matrix;
     cv::Mat M1,M2,D1,D2,F,R,R1,R2,P1,P2,Q;
@@ -60,44 +102,53 @@ int main(int argc, char** argv)
 
     //----------------------------------camera calib--------------------
     
-    // cv::FileStorage fSettings(strSettingPath,cv::FileStorage::READ);
-    // float fx,fy,cx,cy,bf;
-    // fSettings["Camera.fx"]>>fx;
-    // fSettings["Camera.fy"]>>fy;
-    // fSettings["Camera.cx"]>>cx;
-    // fSettings["Camera.cy"]>>cy;
-    // fSettings["Camera.bf"]>>bf;
-    // proj_left_matrix = (cv::Mat_<float> (3,4)<< fx,0.,cx,0.,0.,fy,cy,0.,0.,0.,1.,0.);
-    // proj_right_matrix = (cv::Mat_<float> (3,4)<< fx,0.,cx,bf,0.,fy,cy,0.,0.,0.,1.,0.);
+    if(mode == "KITTI"){
+        cv::FileStorage fSettings(strSettingPath,cv::FileStorage::READ);
+        float fx,fy,cx,cy,bf;
+        fSettings["Camera.fx"]>>fx;
+        fSettings["Camera.fy"]>>fy;
+        fSettings["Camera.cx"]>>cx;
+        fSettings["Camera.cy"]>>cy;
+        fSettings["Camera.bf"]>>bf;
+        proj_left_matrix = (cv::Mat_<float> (3,4)<< fx,0.,cx,0.,0.,fy,cy,0.,0.,0.,1.,0.);
+        proj_right_matrix = (cv::Mat_<float> (3,4)<< fx,0.,cx,bf,0.,fy,cy,0.,0.,0.,1.,0.);
+        
+    }
 
-    cv::FileStorage fSettings(strSettingPath +"intrinsics.yml", cv::FileStorage::READ);
+    if(mode == "LIVE"){
+        cv::FileStorage fSettings(strSettingPath +"intrinsics.yml", cv::FileStorage::READ);
 
-    fSettings["M1"]>> M1;
-    fSettings["M2"]>> M2;
-    fSettings["D1"]>> D1;
-    fSettings["D2"]>> D2;
-    fSettings["F"]>>F;
+        fSettings["M1"]>> M1;
+        fSettings["M2"]>> M2;
+        fSettings["D1"]>> D1;
+        fSettings["D2"]>> D2;
+        fSettings["F"]>>F;
+        
+        fSettings.open(strSettingPath+"extrinsics.yml", cv::FileStorage::READ);  
+        fSettings["R"]>>R;
+        //fs["T"]>>T;
+        fSettings["R1"]>>R1;
+        fSettings["R2"]>>R2;
+        fSettings["P1"]>>proj_left_matrix;
+        fSettings["P2"]>>proj_right_matrix;
+        fSettings["Q"]>>Q;
+        fSettings["validRoi1"]>>validRoi1;
+        fSettings["validRoi2"]>>validRoi2;
+        fSettings.release();
     
-    fSettings.open(strSettingPath+"extrinsics.yml", cv::FileStorage::READ);  
-    fSettings["R"]>>R;
-    //fs["T"]>>T;
-    fSettings["R1"]>>R1;
-    fSettings["R2"]>>R2;
-    fSettings["P1"]>>proj_left_matrix;
-    fSettings["P2"]>>proj_right_matrix;
-    fSettings["Q"]>>Q;
-    fSettings["validRoi1"]>>validRoi1;
-    fSettings["validRoi2"]>>validRoi2;
-    fSettings.release();
+    }
+
     std::cout<<"project left matrix: "<<std::endl<<proj_left_matrix<<std::endl;
     std::cout<<"project right matrix: "<<std::endl<<proj_right_matrix<<std::endl;
-    
     //--------------------------------variables---------------------
     cv::Mat rotation = cv::Mat::eye(3,3,CV_64F);
     cv::Mat translation_stereo = cv::Mat::zeros(3,1,CV_64F);
+    cv::Vec3d rotation_euler;
+    
 
     cv::Ptr<cv::ORB> orb_detector = cv::ORB::create();
     orb_detector->setMaxFeatures(2000);
+    //orb_detector->setNLevels(1);
 
     //need pose?
     cv::Mat pose = cv::Mat::zeros(3,1,CV_64F);
@@ -122,7 +173,7 @@ int main(int argc, char** argv)
     cv::Mat imageRight_t0_Color, imageRight_t0;
     //----first images
 
-    if(argc ==3){
+    if(argc >3){
         loadImageLeft(imageLeft_t0_Color,imageLeft_t0,init_frame_id,filepath);
         loadImageRight(imageRight_t0_Color,imageRight_t0,init_frame_id,filepath);
     }
@@ -132,26 +183,21 @@ int main(int argc, char** argv)
     
     }
     float fps;
+    
     //rectification of image + undistort
-    // double scaling_factor;
-    // scaling_factor = 800./MAX(imageLeft_t0.size().width,imageLeft_t0.size().height);
-    // int wid = cvRound(imageLeft_t0.size().width*scaling_factor);
-    // int hei = cvRound(imageLeft_t0.size().height*scaling_factor);
     cv::Mat rmap[2][2];
-    cv::initUndistortRectifyMap(M1,D1,R1,proj_left_matrix,imageLeft_t0.size(),CV_32FC1,rmap[0][0],rmap[0][1]);
-    cv::initUndistortRectifyMap(M2,D2,R2,proj_right_matrix,imageLeft_t0.size(),CV_32FC1,rmap[1][0],rmap[1][1]);
-    cv::remap(imageLeft_t0,imageLeft_t0,rmap[0][0],rmap[0][1],cv::INTER_LINEAR);
-    cv::remap(imageRight_t0,imageRight_t0,rmap[1][0],rmap[1][1],cv::INTER_LINEAR);
-    // to show bounding box of feature matching
-    // cv::rectangle(imageLeft_t0,validRoi1,cv::Scalar(0,0,255),3,8);
-    // cv::imshow("rect",imageLeft_t0);
-    // cv::rectangle(imageRight_t0,validRoi2,cv::Scalar(0,0,255),3,8);
-    // cv::imshow("rect1",imageRight_t0);
-    // cv::waitKey();
+    if(mode =="LIVE"){
+    
+        cv::initUndistortRectifyMap(M1,D1,R1,proj_left_matrix,imageLeft_t0.size(),CV_32FC1,rmap[0][0],rmap[0][1]);
+        cv::initUndistortRectifyMap(M2,D2,R2,proj_right_matrix,imageLeft_t0.size(),CV_32FC1,rmap[1][0],rmap[1][1]);
+        cv::remap(imageLeft_t0,imageLeft_t0,rmap[0][0],rmap[0][1],cv::INTER_LINEAR);
+        cv::remap(imageRight_t0,imageRight_t0,rmap[1][0],rmap[1][1],cv::INTER_LINEAR);
+    }
 
-    // cv::resize(imageLeft_t0,imageLeft_t0,cv::Size(wid,hei),0,0,CV_INTER_LINEAR);
-    // cv::resize(imageRight_t0,imageRight_t0,cv::Size(wid,hei),0,0,CV_INTER_LINEAR);
-
+    if(mode =="KITTI"){
+        validRoi1 = cv::Rect(0,0,imageLeft_t0.cols,imageLeft_t0.rows);
+        validRoi2 = cv::Rect(0,0,imageLeft_t0.cols,imageLeft_t0.rows);
+    }
     //----------VO
 
     clock_t tic = clock();
@@ -172,18 +218,19 @@ int main(int argc, char** argv)
         //load images from frame 1 not 0
         cv::Mat imageLeft_t1_Color, imageLeft_t1;        
         cv::Mat imageRight_t1_Color, imageRight_t1;
-        if(argc ==3){
+        if(argc >3){
             loadImageLeft(imageLeft_t1_Color,imageLeft_t1,frame_id,filepath);
             loadImageRight(imageRight_t1_Color,imageRight_t1,frame_id,filepath);
         }
-        if(argc ==2){
+        if(argc ==3){
             loadImageLeft(cap0,imageLeft_t1_Color,imageLeft_t1,frame_id);
             loadImageRight(cap1,imageRight_t1_Color,imageRight_t1,frame_id);
         }
-        cv::remap(imageLeft_t1,imageLeft_t1,rmap[0][0],rmap[0][1],cv::INTER_LINEAR);
-        cv::remap(imageRight_t1,imageRight_t1,rmap[1][0],rmap[1][1],cv::INTER_LINEAR);
-        // cv::resize(imageLeft_t1,imageLeft_t1,cv::Size(wid,hei),0,0,CV_INTER_LINEAR);
-        // cv::resize(imageRight_t1,imageRight_t1,cv::Size(wid,hei),0,0,CV_INTER_LINEAR);
+
+        if(mode =="LIVE"){
+            cv::remap(imageLeft_t1,imageLeft_t1,rmap[0][0],rmap[0][1],cv::INTER_LINEAR);
+            cv::remap(imageRight_t1,imageRight_t1,rmap[1][0],rmap[1][1],cv::INTER_LINEAR);
+        }
 
         //-- create sgbm matcher for disparty( use to get world points by x Q) ------------------------------------------------
 
@@ -346,9 +393,9 @@ int main(int argc, char** argv)
         // cv::convertPointsFromHomogeneous(points4D_t1.t(),points3D_t1); // divides by last term to get 3D
         // points3D_t1 = points3D_t1.reshape(1); //adjust for channels
 
-
+       
         // 3D to 2D correspondence method----------------------------------------------------------------------------------------------
-        trackingFrame2Frame(proj_left_matrix,proj_right_matrix, keypointsLeft_t0, keypointsLeft_t1,points3D_t0, rotation,translation_stereo);
+        trackingFrame2Frame(proj_left_matrix,proj_right_matrix, keypointsLeft_t0, keypointsLeft_t1,points3D_t0, rotation,translation_stereo,rotation_euler, mode);
         displayTracking(imageLeft_t1,keypointsLeft_t0,keypointsLeft_t1);
 
         //update world mat of keypoints wrt global coordinate frame------------------------------------------------------------------
@@ -370,13 +417,13 @@ int main(int argc, char** argv)
         // simpleVis(features_cloud_ptr, viewer);
 
         //integrating and display-------------------------------------------------------------------
-        cv::Vec3f rotation_euler = rotationMatrixToEulerAngles(rotation);
+        //cv::Vec3f rotation_euler123 = rotationMatrixToEulerAngles(rotation);
         std::cout<<"rotation:" <<rotation_euler <<std::endl;
         std::cout<<"translation: "<<translation_stereo.t()<<std::endl;
 
         cv::Mat rigid_body_transformation;
 
-        if(abs(rotation_euler[1])<0.1 && abs(rotation_euler[0])<0.1 && abs(rotation_euler[2])<0.1)
+        if(abs(rotation_euler[1])<10 && abs(rotation_euler[0])<10 && abs(rotation_euler[2])<10)
          {
             integrateOdometryStereo(frame_id, rigid_body_transformation, frame_pose, rotation, translation_stereo);
 
@@ -390,7 +437,7 @@ int main(int argc, char** argv)
         std::cout <<"frame_pose"<<frame_pose<<std::endl;
 
         Rpose = frame_pose(cv::Range(0,3), cv::Range(0,3)); // column 0 to 3 exclude 3, row 0 to 3, exlude 3, your 3 by 3 matrix 
-        cv::Vec3f Rpose_euler = rotationMatrixToEulerAngles(Rpose);
+        //cv::Vec3f Rpose_euler = rotationMatrixToEulerAngles(Rpose);
         //std:: cout<<"Rpose_euler"<<Rpose_euler <<std::endl;
 
         cv::Mat pose = frame_pose.col(3).clone(); // last column translation matrix for pose
@@ -402,7 +449,8 @@ int main(int argc, char** argv)
         std::cout<<"FPS: "<<fps<<std::endl;
 
         // display(frame_id, trajectory, pose, pose_matrix_gt, fps, display_ground_truth);
-        display(frame_id, trajectory, pose, fps, display_ground_truth);
+        display(frame_id, trajectory, pose, fps, display_ground_truth,rotation_euler,translation_stereo,pose_estimator_data);
+        //std::cout<< "VO descriptors" << currentVOFeatures.descriptors <<std::endl;
     }
 
     return 0;

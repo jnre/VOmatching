@@ -54,12 +54,13 @@ void trackingFrame2Frame(cv::Mat& projMatrl, cv::Mat& projMatrr,
                          std::vector<cv::KeyPoint>&  keypointsLeft_t1, 
                          cv::Mat& points3D_t0,
                          cv::Mat& rotation,
-                         cv::Mat& translation);
+                         cv::Mat& translation,cv::Vec3d & rotation_euler, std::string & mode);
 
 void removeInvalidPoints(std::vector<cv::Point2f>& points, const std::vector<bool>& status);
 
 void removeInvalidAge(std::vector<int> &currentVOfeaturesage, const std::vector<bool>& status);
 
+void getEulerAngles(cv::Mat &rvec_solvepnp,cv::Vec3d &rotation_euler);
 
 void displayTracking(cv::Mat& imageLeft_t1, 
                      std::vector<cv::KeyPoint>&  keypointsLeft_t0,

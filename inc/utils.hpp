@@ -54,8 +54,8 @@ bool isRotationMatrix(cv::Mat &R);
 void integrateOdometryStereo(int frame_id, cv::Mat& rigid_body_transformation, cv::Mat& frame_pose, const cv::Mat& rotation, 
     const cv::Mat& translation_stereo);
 
-// void display(int frame_id, cv::Mat& trajectory, cv::Mat& pose, std::vector<Matrix>& pose_matrix_gt, float fps, bool showgt);    
-void display(int frame_id, cv::Mat& trajectory, cv::Mat& pose, float fps, bool showgt);    
+//void display(int frame_id, cv::Mat& trajectory, cv::Mat& pose, std::vector<Matrix>& pose_matrix_gt, float fps, bool showgt);    
+void display(int frame_id, cv::Mat& trajectory, cv::Mat& pose, float fps, bool showgt,const cv::Vec3d & rotation, const cv::Mat& translation_stereo,std::vector<cv::Point3d> pose_estimator_data);    
 void pclDisplay(const cv::Mat &triangulated1, const cv::Mat &triangulated0, pcl::PointCloud<pcl::PointXYZ>::Ptr cloud1,pcl::PointCloud<pcl::PointXYZ>::Ptr cloud0,boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer);
 
 void getOdometryMatch(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud0,const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud1);

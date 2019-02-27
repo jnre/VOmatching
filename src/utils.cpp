@@ -6,7 +6,7 @@ void loadImageLeft(cv::Mat & image,cv::Mat & no_color,int frame_id, std::string 
     std::string filename = filepath + std::string(file);
     // std::cout<<"filename: "<< filename <<std::endl;
     image = cv::imread(filename);
-    // cv::imshow("left0",no_color);
+    // cv::imshow("left0",image);
     // cv::waitKey();
     cv::cvtColor(image,no_color,cv::COLOR_BGR2GRAY);
 }
@@ -128,7 +128,7 @@ void integrateOdometryStereo(int frame_i, cv::Mat& rigid_body_transformation, cv
 
     // rigid_body_transformation = rigid_body_transformation.inv();
     // if ((scale>0.1)&&(translation_stereo.at<double>(2) > translation_stereo.at<double>(0)) && (translation_stereo.at<double>(2) > translation_stereo.at<double>(1))) 
-    if (scale > 1. && scale < 10) 
+    if (scale > 2 && scale < 50)  
     {
       // std::cout << "Rpose" << Rpose << std::endl;
 
@@ -142,26 +142,31 @@ void integrateOdometryStereo(int frame_i, cv::Mat& rigid_body_transformation, cv
 }
 
     
-// void display(int frame_id, cv::Mat& trajectory, cv::Mat& pose, std::vector<Matrix>& pose_matrix_gt, float fps, bool show_gt)
-void display(int frame_id, cv::Mat& trajectory, cv::Mat& pose, float fps, bool show_gt)
+//void display(int frame_id, cv::Mat& trajectory, cv::Mat& pose, std::vector<Matrix>& pose_matrix_gt, float fps, bool show_gt)
+void display(int frame_id, cv::Mat& trajectory, cv::Mat& pose, float fps, bool show_gt,const cv::Vec3d & rotation_euler, const cv::Mat& translation_stereo,std::vector<cv::Point3d> pose_estimator_data)
 {
     // draw estimated trajectory 
-    int x = 600 - int(pose.at<double>(0))  ;
-    int y = 400 - int(pose.at<double>(2)) ; //this is actually z
+    int x = 400 + int(pose.at<double>(0))  ;
+    int y = 500 - int(pose.at<double>(2)) ; //this is actually z
     circle(trajectory, cv::Point(x, y) ,1, CV_RGB(255,0,0), 2);
-
-    // if (show_gt)
-    // {
-    //   // draw ground truth trajectory 
-    //   cv::Mat pose_gt = cv::Mat::zeros(1, 3, CV_64F);
+    char text0[200];
+    
+    if (show_gt)
+    {
+      // draw ground truth trajectory 
+      cv::Mat pose_gt = cv::Mat::zeros(1, 3, CV_64F);
       
-    //   pose_gt.at<double>(0) = pose_matrix_gt[frame_id].val[0][3];
-    //   pose_gt.at<double>(1) = pose_matrix_gt[frame_id].val[0][7];
-    //   pose_gt.at<double>(2) = pose_matrix_gt[frame_id].val[0][11];
-    //   x = int(pose_gt.at<double>(0)) + 300;
-    //   y = int(pose_gt.at<double>(2)) + 100;
-    //   circle(trajectory, cv::Point(x, y) ,1, CV_RGB(255,255,0), 2);
-    // }
+
+      pose_gt.at<double>(0) = pose_estimator_data[frame_id].x;
+      pose_gt.at<double>(1) = pose_estimator_data[frame_id].y;
+      pose_gt.at<double>(2) = pose_estimator_data[frame_id].z;
+      int x2 = 800 + int(pose_gt.at<double>(0)) ;
+      int y2 = 500 - int(pose_gt.at<double>(2)) ;
+      circle(trajectory, cv::Point(x2, y2) ,1, CV_RGB(255,255,0), 2);
+      
+      sprintf(text0,"gt[x:%5.2f y:%5.2f z:%5.2f]",pose_gt.at<double>(0),pose_gt.at<double>(1),pose_gt.at<double>(2));
+      
+    }
     // print info
 
     // rectangle( traj, Point(10, 30), Point(550, 50), CV_RGB(0,0,0), CV_FILLED);
@@ -169,15 +174,27 @@ void display(int frame_id, cv::Mat& trajectory, cv::Mat& pose, float fps, bool s
     // putText(traj, text, textOrg, fontFace, fontScale, Scalar::all(255), thickness, 8);
 
     char text[200];
-    sprintf(text, "x:%5.2f  y:%5.2f   z:%5.2f ",pose.at<double>(0),pose.at<double>(1),pose.at<double>(2));
-    cv::putText(trajectory,text,cv::Point(50,50),CV_FONT_HERSHEY_COMPLEX,1,cv::Scalar::all(255),2,8);
-    cv::imshow( "Trajectory", trajectory );
+    sprintf(text, "pose[x:%5.2f y:%5.2f z:%5.2f] ",pose.at<double>(0),pose.at<double>(1),pose.at<double>(2));
+    
+    char text2[200];
+    sprintf(text2, "rotation: [yaw: %5.3f pitch:%5.3f row:%5.3f] translation: [%5.2f %5.2f %5.2f]",rotation_euler[1], rotation_euler[0],rotation_euler[2],translation_stereo.at<double>(0),translation_stereo.at<double>(1),translation_stereo.at<double>(2));
+    cv::line(trajectory, cv::Point(600,395), cv::Point(600,405), CV_RGB(0,0,255));
+    cv::line(trajectory, cv::Point(595,400), cv::Point(605,400), CV_RGB(0,0,255));
+    cv::Mat trajectorywithText = trajectory.clone();
+
+    if(show_gt){
+        cv::putText(trajectorywithText,text0,cv::Point(700,50),CV_FONT_HERSHEY_COMPLEX_SMALL,0.8,cv::Scalar::all(255),1,8);
+    }
+    cv::putText(trajectorywithText,text,cv::Point(50,50),CV_FONT_HERSHEY_COMPLEX_SMALL,0.8,cv::Scalar::all(255),1,8);
+    cv::putText(trajectorywithText,text2,cv::Point(50,550),CV_FONT_HERSHEY_COMPLEX_SMALL,0.8,cv::Scalar::all(255),1,8);
+    
+    cv::imshow( "Trajectory", trajectorywithText );
     
 
 
-    cv::waitKey(100);
-    trajectory.release();
-    trajectory = cv::Mat::zeros(600,1200,CV_8UC3);
+    cv::waitKey(1);
+    trajectorywithText.release();
+    
 }
 
 void pclDisplay(const cv::Mat &triangulated1, const cv::Mat &triangulated0, pcl::PointCloud<pcl::PointXYZ>::Ptr cloud1,pcl::PointCloud<pcl::PointXYZ>::Ptr cloud0,boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer){

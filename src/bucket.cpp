@@ -60,13 +60,20 @@ void Bucket::get_features(FeatureSet& current_features){
     current_features.keypoints.insert(current_features.keypoints.end(), features.keypoints.begin(), features.keypoints.end());
     current_features.ages.insert(current_features.ages.end(), features.ages.begin(), features.ages.end());
     if(current_features.descriptors.empty()){
-        current_features.descriptors=features.descriptors;
+        if(features.descriptors.empty()){
+            return;   
+        }
+        else{ 
+            current_features.descriptors=features.descriptors;
+            return;
+        }
+    }
+    else if(features.descriptors.empty()){
+        return;
     }
     else if(!features.descriptors.empty()){
         cv::vconcat(current_features.descriptors,features.descriptors,current_features.descriptors);
     }
-        
-
   
 
 }

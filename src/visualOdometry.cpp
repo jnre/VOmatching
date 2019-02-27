@@ -144,7 +144,7 @@ void trackingFrame2Frame(cv::Mat& projMatrl, cv::Mat& projMatrr,
                          std::vector<cv::KeyPoint>&  keypointsLeft_t1, 
                          cv::Mat& points3D_t0,
                          cv::Mat& rotation,
-                         cv::Mat& translation)
+                         cv::Mat& translation,cv::Vec3d &rotation_euler, std::string &mode)
 {
     std::vector<cv::Point2f> pointsLeft_t0, pointsLeft_t1;
     
@@ -160,6 +160,8 @@ void trackingFrame2Frame(cv::Mat& projMatrl, cv::Mat& projMatrr,
     //   std::cout<<"project left matrix: "<<std::endl<< std::fixed << std::setprecision(10) << projMatrl.at<double>(0,0)<<std::endl;
     float focal = projMatrl.at<double>(0, 0);
     cv::Point2d principle_point(projMatrl.at<double>(0, 2), projMatrl.at<double>(1, 2));
+    cv::Mat rvec = cv::Mat::zeros(3, 1, CV_64F);
+    
 
       //recovering the pose and the essential cv::matrix
     //   cv::Mat E, mask;
@@ -174,11 +176,20 @@ void trackingFrame2Frame(cv::Mat& projMatrl, cv::Mat& projMatrr,
     // ------------------------------------------------
     cv::Mat distCoeffs = cv::Mat::zeros(4, 1, CV_64FC1);  
     cv::Mat inliers;  
-    cv::Mat rvec = cv::Mat::zeros(3, 1, CV_64FC1);
-    cv::Mat intrinsic_matrix = (cv::Mat_<float>(3, 3) << projMatrl.at<double>(0, 0), projMatrl.at<double>(0, 1), projMatrl.at<double>(0, 2),
+    rvec.release();
+    translation.release();
+    cv::Mat intrinsic_matrix;
+    if(mode == "KITTI"){
+    intrinsic_matrix = (cv::Mat_<float>(3, 3) << projMatrl.at<float>(0, 0), projMatrl.at<float>(0, 1), projMatrl.at<float>(0, 2),
+                                                projMatrl.at<float>(1, 0), projMatrl.at<float>(1, 1), projMatrl.at<float>(1, 2),
+                                                projMatrl.at<float>(2, 0), projMatrl.at<float>(2, 1), projMatrl.at<float>(2, 2)); // change from 1 to 2 jo
+    }
+    if(mode == "LIVE"){
+    intrinsic_matrix = (cv::Mat_<float>(3, 3) << projMatrl.at<double>(0, 0), projMatrl.at<double>(0, 1), projMatrl.at<double>(0, 2),
                                                 projMatrl.at<double>(1, 0), projMatrl.at<double>(1, 1), projMatrl.at<double>(1, 2),
                                                 projMatrl.at<double>(2, 0), projMatrl.at<double>(2, 1), projMatrl.at<double>(2, 2)); // change from 1 to 2 jo
-    
+    }
+
     std::cout<<"project left matrix: "<<std::endl<< intrinsic_matrix<<std::endl;
     int iterationsCount = 500;        // number of Ransac iterations.
     float reprojectionError = 2.0;    // maximum allowed distance to consider it an inlier.
@@ -198,8 +209,9 @@ void trackingFrame2Frame(cv::Mat& projMatrl, cv::Mat& projMatrr,
     rvec = -rvec;
     cv::Mat rvec_solvepnp;
     cv::Rodrigues(rvec, rvec_solvepnp);
+    getEulerAngles(rvec_solvepnp,rotation_euler);
     std::cout<<"translation: "<<translation <<std::endl;
-    std::cout <<"rvec for pnpransac in euler angles"<<rvec <<std::endl;
+    std::cout <<"rvec "<<rvec <<std::endl;
     std::cout<< "rvec_solvepnp"<< rvec_solvepnp<<std::endl; 
 
     rotation = rvec_solvepnp;
@@ -216,6 +228,20 @@ void trackingFrame2Frame(cv::Mat& projMatrl, cv::Mat& projMatrr,
     // bundle adjustment attempt
     //bundleAdjustment ( vec_points3D_t0, pointsLeft_t1, intrinsic_matrix, rotation, translation );
     
+
+}
+
+void getEulerAngles(cv::Mat &rvec_solvepnp,cv::Vec3d &rotation_euler){
+    cv::Mat cameraMatrix,rotMatrix,transVect,rotMatrixX,rotMatrixY,rotMatrixZ;
+    double* _r = rvec_solvepnp.ptr<double>();
+    double projection_matrix[12] = {_r[0],_r[1],_r[2],0,
+                          _r[3],_r[4],_r[5],0,
+                          _r[6],_r[7],_r[8],0}; 
+    
+    // projMatrix = (rvec_solvepnp.at<double>(0,0),rvec_solvepnp.at<double>(0,1),rvec_solvepnp.at<double>(0,2),0,
+    //                          rvec_solvepnp.at<double>(1,0),rvec_solvepnp.at<double>(1,1),rvec_solvepnp.at<double>(1,2),0,
+    //                          rvec_solvepnp.at<double>(2,0),rvec_solvepnp.at<double>(2,1),rvec_solvepnp.at<double>(2,2),0);
+    cv::decomposeProjectionMatrix(cv::Mat(3,4,CV_64FC1,projection_matrix),cameraMatrix,rotMatrix,transVect,rotMatrixX,rotMatrixY,rotMatrixZ,rotation_euler);
 
 }
 
@@ -319,7 +345,7 @@ void displayTracking(cv::Mat& imageLeft_t1,
       }
 
       cv::imshow("vis ", vis );  
-      cv::waitKey(100);
+      cv::waitKey(1);
 
 }
 

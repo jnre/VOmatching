@@ -10,7 +10,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "/home/joseph/SOFT_FEATURES/build/run",
-            "args": [ "/home/joseph/SOFT_FEATURES/myparam/", "/home/joseph/SOFT_FEATURES/mypoints/"],
+            "args": [ "/home/joseph/SOFT_FEATURES/myparam/", "LIVE"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
