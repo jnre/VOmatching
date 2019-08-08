@@ -43,6 +43,9 @@ add_library(MapPoint SHARED "src/MapPoint.cpp")
 
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR})
 message(${PROJECT_BINARY_DIR})
+message(STATUS "opencv: ${OpenCV_VERSION}")
+message(STATUS "g2o:  ${G2O_INCLUDE_DIRS}")
+message(STATUS "csparse:  ${CSPARSE_INCLUDE_DIR}")
 
 add_executable( run src/main.cpp )
 target_link_libraries( bucket ${OpenCV_LIBS} )

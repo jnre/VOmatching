@@ -38,9 +38,6 @@ void featureDetectionFast(cv::Mat image, std::vector<cv::Point2f>& points,cv::Re
   cv::KeyPoint::convert(keypoints, points, std::vector<int>());
   
   
-  cv::drawKeypoints(image,keypoints,image);
-  cv::imshow("image123",image);
-  cv::waitKey(1);
   
 }
 
@@ -396,7 +393,7 @@ std::vector<cv::KeyPoint> & keypoints_l_1,std::vector<cv::KeyPoint> & keypoints_
 
 
   cv::Mat hoho;
-  cv::drawMatches(imageLeft_t0,keypoints_l_0,imageLeft_t1,keypoints_l_1,matches,hoho);
+  //cv::drawMatches(imageLeft_t0,keypoints_l_0,imageLeft_t1,keypoints_l_1,matches,hoho);
   //cv::imshow("hoho",hoho);
   //cv::waitKey(1);
   keypoints_r_0=temp_keypoints_r_0;
@@ -481,6 +478,148 @@ std::vector<cv::KeyPoint> & keypoints_l_1,std::vector<cv::KeyPoint> & keypoints_
   
 
 }
+
+// void RightMatching(cv::Mat &imageRight_t0,cv::Mat &imageRight_t1,std::vector<cv::KeyPoint> & keypoints_l_0 ,
+// std::vector<cv::KeyPoint> & keypoints_r_1,std::vector<cv::KeyPoint> & keypoints_r_0,cv::Rect & validRoi2,FeatureSet& current_features
+// ,cv::Ptr<cv::ORB> &orb_detector,cv::Mat& checker){
+
+//   cv::Mat descriptors_r_0, descriptors_r_1;
+//   std::vector<cv::KeyPoint> temp_keypoints_r_0;
+//   descriptors_r_0 = ;
+//   std::vector<bool> boolll(keypoints_l_0.size());
+//   std::vector<cv::DMatch> inline_matches;
+
+//   keypoints_l_1.clear();
+//   featureDetectionORB(imageLeft_t1,keypoints_l_1, validRoi2,orb_detector,descriptors_l_1);
+//   std::vector<cv::KeyPoint> matched_left_0,matched_left_1;
+//   FeatureSet temp_current_features;
+
+//   std::vector<cv::DMatch> matches;
+//   cv::Ptr<cv::BFMatcher> orb_matcher = cv::BFMatcher::create(cv::NORM_HAMMING,true);
+//   orb_matcher->match(descriptors_l_0,descriptors_l_1,matches);
+  
+  
+//   //no sort
+//   for(int i = 0;i<matches.size();i++){
+
+//         matched_left_0.push_back(keypoints_l_0[matches[i].queryIdx]);
+//         matched_left_1.push_back(keypoints_l_1[matches[i].trainIdx]);
+//         temp_current_features.keypoints.push_back(keypoints_l_1[matches[i].trainIdx]);
+//         temp_current_features.ages.push_back(current_features.ages[matches[i].queryIdx]); //takes ages position for t_0
+//         temp_current_features.descriptors.push_back(descriptors_l_1.row(matches[i].trainIdx));
+//         temp_keypoints_r_0.push_back(keypoints_r_0[matches[i].queryIdx]);
+//   }
+
+//   // std::vector<std::vector<cv::DMatch>> matches;
+//   // cv::Ptr<cv::DescriptorMatcher> orb_matcher = cv::DescriptorMatcher::create("BruteForce-Hamming");
+//   //   orb_matcher->knnMatch(descriptors_l_0,descriptors_l_1,matches,2);
+
+//   //   for(int i =0 ;i<keypoints_l_0.size();i++){
+//   //     boolll[i] = false;
+//   //     if(matches[i][0].distance<0.65*matches[i][1].distance){
+//   //     //keypoint in first frame stored in matched 0, passing distance thres
+//   //       boolll[i] = true;
+//   //       int new_i = static_cast<int>(matched_left_0.size());
+//   //       matched_left_0.push_back(keypoints_l_0[matches[i][0].queryIdx]);
+//   //       //keypoint in current frame stored in matched 1, passing distance thres
+//   //       matched_left_1.push_back(keypoints_l_1[matches[i][0].trainIdx]);
+//   //       inline_matches.push_back(cv::DMatch(new_i,new_i,matches[i][0].distance));
+//   //       temp_current_features.keypoints.push_back(keypoints_l_1[matches[i][0].trainIdx]);
+//   //       temp_current_features.ages.push_back(current_features.ages[matches[i][0].queryIdx]);
+//   //       temp_current_features.descriptors.push_back(descriptors_l_1.row(matches[i][0].trainIdx));
+//   //       temp_keypoints_r_0.push_back(keypoints_r_0[matches[i][0].queryIdx]);
+//   //     }
+//   //   }
+
+
+
+
+//   cv::Mat hoho;
+//   //cv::drawMatches(imageLeft_t0,keypoints_l_0,imageLeft_t1,keypoints_l_1,matches,hoho);
+//   //cv::imshow("hoho",hoho);
+//   //cv::waitKey(1);
+//   keypoints_r_0=temp_keypoints_r_0;
+//   std::vector<cv::DMatch> inline_matches_ransac;
+
+
+//   cv::Mat inline_mask, homography;
+//   std::vector<cv::KeyPoint> RANSAC_l_0,RANSAC_l_1;
+//   // std::vector<cv::Point2f> converted_matched_old, converted_matched_new;
+//   std::vector<cv::Point2f> converted_matched_l_0, converted_matched_l_1;
+//   // KeyPoint::convert(matched_old,converted_matched_old);
+//   // KeyPoint::convert(matched_newest,converted_matched_new);
+//   cv::KeyPoint::convert(matched_left_0,converted_matched_l_0);
+//   cv::KeyPoint::convert(matched_left_1,converted_matched_l_1);
+//   if(matched_left_0.size()>=4){
+//       homography = findHomography(converted_matched_l_0, converted_matched_l_1,cv::RANSAC,3,inline_mask);
+//   }
+//   else
+//   {
+//       throw "too little points"; 
+  
+//   }
+//   //FeatureSet temp2_current_features;
+//   for(int i =0; i <matched_left_0.size();i++){
+//     //see if mask gives a value of one, where one means it is correct matched
+//     if(inline_mask.at<uchar>(i)){
+//         int new_i = static_cast<int>(RANSAC_l_0.size());
+//         RANSAC_l_0.push_back(matched_left_0[i]);
+//         RANSAC_l_1.push_back(matched_left_1[i]);
+//         //store matches of correct RANSAC
+//         inline_matches_ransac.push_back(cv::DMatch(new_i,new_i,0));
+
+//     }
+//   }
+
+//   checker = inline_mask;
+//   cv::Mat hehe;
+//   cv::drawMatches(imageLeft_t0,RANSAC_l_0,imageLeft_t1,RANSAC_l_1,inline_matches_ransac,hehe,
+//   cv::Scalar(255,0,0),cv::Scalar(255,0,0),std::vector<char>(),cv::DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS);
+//   //cv::imshow("ransac 0 and 1",hehe);
+//   //cv::waitKey(1);
+
+//   int counter2 = 0;
+//   for(int i =0; i<matched_left_0.size();i++){
+    
+//     if(!inline_mask.at<uchar>(i)){
+//       temp_current_features.keypoints.erase(temp_current_features.keypoints.begin() + counter2);
+//       temp_current_features.ages.erase(temp_current_features.ages.begin() + counter2);
+
+//       cv::Mat top, bottom;
+
+//       temp_current_features.descriptors(cv::Range(0,counter2),cv::Range(0,32)).copyTo(top);
+//       if(top.empty()){
+//         temp_current_features.descriptors(cv::Range(counter2+1,temp_current_features.descriptors.rows),cv::Range(0,32)).copyTo(temp_current_features.descriptors);
+//         continue;
+//       }
+//       else if(counter2+1<temp_current_features.size()){
+//         temp_current_features.descriptors(cv::Range(counter2+1,temp_current_features.descriptors.rows),cv::Range(0,32)).copyTo(bottom);
+//         vconcat(top,bottom,temp_current_features.descriptors);
+//         continue;
+//       }
+//       else{
+//         temp_current_features.descriptors = top;
+//         break;
+//       }
+
+
+
+//     }
+//     else{
+//       counter2++;      
+//     }
+//   }
+
+//   keypoints_l_0=RANSAC_l_0;
+//   keypoints_l_1=RANSAC_l_1;
+//   current_features.clear();
+//   current_features.keypoints= temp_current_features.keypoints;
+//   current_features.ages= temp_current_features.ages;
+//   current_features.descriptors= temp_current_features.descriptors;
+//   //current features is now for t1.
+  
+
+// }
 
 void LRChecker(std::vector<cv::KeyPoint>& keypoints_l_0, std::vector<cv::KeyPoint>& keypoints_r_0,cv::Mat & checker){
       

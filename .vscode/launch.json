@@ -10,7 +10,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "/home/joseph/SOFT_FEATURES/build/run",
-            "args": [ "/home/joseph/SOFT_FEATURES/myparam/", "LIVE"],
+            "args": [ "/home/joseph/SOFT_FEATURES/kitti00.yaml", "/home/joseph/dataset/sequences/00/","KITTI","/home/joseph/dataset/poses/00.txt"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],

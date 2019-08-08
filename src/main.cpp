@@ -33,7 +33,7 @@ int main(int argc, char** argv)
 {
     if(argc <2)
     {
-        // /home/joseph/SOFT_FEATURES/myparam/   path: /home/joseph/SOFT_FEATURES/mypoints/
+        // /home/joseph/SOFT_FEATURES/myparam/   path: /home/joseph/SOFT_FEATURES/mypoints/ /LIVE
         cerr<<" use ./run  path_to_calibration:/home/joseph/SOFT_FEATURES/kitti00.yaml [optional]path_to sequence: /home/joseph/dataset/sequences/00/ KITTI/LIVE /home/joseph/dataset/poses/00.txt"<<endl;
         return 1;
     }
@@ -374,18 +374,21 @@ int main(int argc, char** argv)
         // pclDisplay(points3D_t1,points3D_t0,cloud1,cloud0,viewer);
         // getOdometryMatch(cloud0,cloud1);
         // *****************************************************************************************************************************
-        cv::Mat points3D_t0;
-        cv::Mat points4D_t0(1,keypointsLeft_t0.size(),CV_64FC4);
+        cv::Mat points3D_t0_L;
+        cv::Mat points4D_t0_L(1,keypointsLeft_t0.size(),CV_64FC4);
         std::vector<cv::Point2f> pointsLeft_t0,pointsRight_t0, pointsLeft_t1,pointsRight_t1;
         cv::KeyPoint::convert(keypointsLeft_t0,pointsLeft_t0);
         cv::KeyPoint::convert(keypointsLeft_t1,pointsLeft_t1);
         cv::KeyPoint::convert(keypointsRight_t0,pointsRight_t0);
+
+        cv::Mat points3D_t0_R = points3D_t0_L.clone();
+
         //cv::KeyPoint::convert(keypointsRight_t1,pointsRight_t1);
 
-        cv::triangulatePoints(proj_left_matrix,proj_right_matrix,pointsLeft_t0,pointsRight_t0,points4D_t0);
-        cv::convertPointsFromHomogeneous(points4D_t0.t(),points3D_t0); // divides by last term to get 3D
-        points3D_t0 = points3D_t0.reshape(1);// adjust for channel
-        //std::cout<<" points3D_t0"<< points3D_t0 <<std::endl;    //there are weird points bettwen pointLeft_t0 and pointsright_to due to lack  of check between epipolar
+        cv::triangulatePoints(proj_left_matrix,proj_right_matrix,pointsLeft_t0,pointsRight_t0,points4D_t0_L);
+        cv::convertPointsFromHomogeneous(points4D_t0_L.t(),points3D_t0_L); // divides by last term to get 3D
+        points3D_t0_L = points3D_t0_L.reshape(1);// adjust for channel
+        //std::cout<<" points4D_t0"<< points4D_t0 <<std::endl;    //there are weird points bettwen pointLeft_t0 and pointsright_to due to lack  of check between epipolar
 
         // cv::Mat points3D_t1;
         // cv::Mat points4D_t1(1,keypointsLeft_t1.size(),CV_64FC4);
@@ -393,13 +396,34 @@ int main(int argc, char** argv)
         // cv::convertPointsFromHomogeneous(points4D_t1.t(),points3D_t1); // divides by last term to get 3D
         // points3D_t1 = points3D_t1.reshape(1); //adjust for channels
 
-       
+        //checking wrt to right camera frame -------------------------------------------------------------------------------------------
+        cv::Mat P2toP1;
+        // if(mode =="KITTI"){
+        //     for(int i =0; i <points3D_t0_L.rows;i++){
+        //         points3D_t0_R.at<float>(i,0) = points3D_t0_L.at<float>(i,0) +proj_right_matrix.at<float>(0,3); 
+
+        //     }
+        //     // P2toP1 = (cv::Mat_<float>(3, 4) << 1, 0, 0, -proj_right_matrix.at<float>(0, 3),
+        //     //                                     0,1,0,0,
+        //     //                                     0,0,1,0);
+        // }
+        // if(mode =="LIVE"){
+
+        //     for(int i =0; i <points3D_t0_L.rows;i++){
+        //         points3D_t0_R.at<float>(i,0) = points3D_t0_L.at<float>(i,0) +proj_right_matrix.at<double>(0,3); 
+
+        //     }
+            
+        // }
+
+        
+
         // 3D to 2D correspondence method----------------------------------------------------------------------------------------------
-        trackingFrame2Frame(proj_left_matrix,proj_right_matrix, keypointsLeft_t0, keypointsLeft_t1,points3D_t0, rotation,translation_stereo,rotation_euler, mode);
+        trackingFrame2Frame(proj_left_matrix,proj_right_matrix, keypointsLeft_t0, keypointsLeft_t1,points3D_t0_L, rotation,translation_stereo,rotation_euler, mode);
         displayTracking(imageLeft_t1,keypointsLeft_t0,keypointsLeft_t1);
 
         //update world mat of keypoints wrt global coordinate frame------------------------------------------------------------------
-        points4D = points4D_t0;
+        points4D = points4D_t0_L;
         frame_pose.convertTo(frame_pose32,CV_32F);
         points4D = frame_pose32 * points4D;
         cv::convertPointsFromHomogeneous(points4D.t(),points3D);

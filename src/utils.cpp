@@ -128,7 +128,9 @@ void integrateOdometryStereo(int frame_i, cv::Mat& rigid_body_transformation, cv
 
     // rigid_body_transformation = rigid_body_transformation.inv();
     // if ((scale>0.1)&&(translation_stereo.at<double>(2) > translation_stereo.at<double>(0)) && (translation_stereo.at<double>(2) > translation_stereo.at<double>(1))) 
-    if (scale > 2 && scale < 50)  
+    
+    //change scale for application, kitti use 0.1 else use (scale>2 && scale <50)
+    if (scale > 0.1 && scale < 50)  
     {
       // std::cout << "Rpose" << Rpose << std::endl;
 
